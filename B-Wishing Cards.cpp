@@ -7,17 +7,13 @@ using namespace std;
 // Maximum value for k as per constraints (k <= 360)
 const int MAXK = 365;
 
-// dp_L[c] stores the minimum starting index L for the current level given cost c
-int dp_L[MAXK];
-// dp_score[c] stores the maximum happiness score achievable with cost c
-long long dp_score[MAXK];
-
-// Arrays to store the next state during DP transitions
-int next_dp_L[MAXK];
-long long next_dp_score[MAXK];
-
-// Array to store the first friend index capable of carrying v cards
-int first_occurrence[MAXK];
+// dp[c][p] stores the maximum score using exactly cost 'c', 
+// where the current starting index L is f[p].
+// p is the index in the precomputed array 'f'.
+// Using 'p' instead of the raw index L compresses the state space significantly.
+long long dp[MAXK][MAXK];
+long long max_S[MAXK]; // Auxiliary array to optimize transitions
+int f[MAXK]; // f[v] stores the first friend index who can carry >= v cards
 
 void solve() {
     int n, k;
@@ -28,92 +24,81 @@ void solve() {
         cin >> a[i];
     }
 
-    // Precompute first_occurrence[v]: the smallest index i (1-based) such that a[i] >= v.
-    // If no friend can carry v cards, set to n + 1.
+    // Precompute f[v]: the smallest 1-based index i such that friend i can carry >= v cards.
+    // If no friend can carry v cards, f[v] = n + 1.
     for (int v = 1; v <= k; ++v) {
-        first_occurrence[v] = n + 1;
+        f[v] = n + 1;
         for (int i = 0; i < n; ++i) {
             if (a[i] >= v) {
-                first_occurrence[v] = i + 1;
+                f[v] = i + 1;
                 break;
             }
         }
     }
+    // Base case for the DP: level k+1 (virtual) starts at n+1.
+    f[k + 1] = n + 1;
 
-    // Initialize DP tables
-    // Base case: For levels > k, the effective start index is n + 1 (meaning never active), cost is 0, score is 0.
+    // Initialize DP table with -1 (unreachable)
     for (int c = 0; c <= k; ++c) {
-        dp_L[c] = n + 1;
-        dp_score[c] = -1; // -1 represents unreachable state
+        for (int p = 0; p <= k + 1; ++p) {
+            dp[c][p] = -1;
+        }
     }
-    dp_score[0] = 0;
 
-    // Process levels (values of cards) from k down to 1.
-    // We calculate the contribution of each level v to the total happiness.
-    // Contribution of level v = number of friends who see a max value >= v.
+    // Base state: At level k+1, cost is 0, effective L is f[k+1] (which is index k+1 in f array)
+    dp[0][k + 1] = 0;
+
+    // Process levels from k down to 1
     for (int v = k; v >= 1; --v) {
         
-        // Initialize next state arrays
+        // Optimization: Pre-calculate the max score for each cost from the previous level (v+1)
+        // This effectively represents the state before making a decision for level v.
         for (int c = 0; c <= k; ++c) {
-            next_dp_L[c] = n + 1;
-            next_dp_score[c] = -1;
-        }
-
-        for (int c = 0; c <= k; ++c) {
-            if (dp_score[c] == -1) continue;
-
-            int current_L = dp_L[c];
-            long long current_S = dp_score[c];
-
-            // Option 1: Do NOT assign value v explicitly to any friend.
-            // In this case, the condition "max >= v" is only met if "max >= v+1" was met.
-            // So the starting index for level v is the same as level v+1 (current_L).
-            int new_L_1 = current_L;
-            long long gain_1 = (new_L_1 <= n) ? (n - new_L_1 + 1) : 0;
-            long long new_score_1 = current_S + gain_1;
-
-            // Update next state for cost c
-            if (new_score_1 > next_dp_score[c]) {
-                next_dp_score[c] = new_score_1;
-                next_dp_L[c] = new_L_1;
-            } else if (new_score_1 == next_dp_score[c]) {
-                if (new_L_1 < next_dp_L[c]) {
-                    next_dp_L[c] = new_L_1;
-                }
-            }
-
-            // Option 2: Assign value v to the earliest capable friend.
-            // This costs v cards. The condition "max >= v" starts being met at min(current_L, first_occurrence[v]).
-            if (c + v <= k) {
-                int new_L_2 = min(current_L, first_occurrence[v]);
-                long long gain_2 = (new_L_2 <= n) ? (n - new_L_2 + 1) : 0;
-                long long new_score_2 = current_S + gain_2;
-                int new_cost = c + v;
-
-                // Update next state for cost c + v
-                if (new_score_2 > next_dp_score[new_cost]) {
-                    next_dp_score[new_cost] = new_score_2;
-                    next_dp_L[new_cost] = new_L_2;
-                } else if (new_score_2 == next_dp_score[new_cost]) {
-                    if (new_L_2 < next_dp_L[new_cost]) {
-                        next_dp_L[new_cost] = new_L_2;
+            max_S[c] = -1;
+            for (int p = v + 1; p <= k + 1; ++p) {
+                if (dp[c][p] != -1) {
+                    if (dp[c][p] > max_S[c]) {
+                        max_S[c] = dp[c][p];
                     }
                 }
             }
         }
 
-        // Move next state to current state for the next iteration
+        // Option 1: Do NOT buy a new card for this level.
+        // We inherit the start index L from the previous level.
+        // If the state was at p (meaning L = f[p]), it stays at p.
+        // We add the contribution of level v given L = f[p].
         for (int c = 0; c <= k; ++c) {
-            dp_L[c] = next_dp_L[c];
-            dp_score[c] = next_dp_score[c];
+            for (int p = v + 1; p <= k + 1; ++p) {
+                if (dp[c][p] != -1) {
+                    long long contribution = (f[p] <= n) ? (long long)n - f[p] + 1 : 0;
+                    dp[c][p] += contribution;
+                }
+            }
+        }
+
+        // Option 2: BUY a new card for this level.
+        // We pay 'v' cost to set the start index L = f[v].
+        // This transitions from any valid state of the previous level to the new state p = v.
+        long long buy_contribution = (f[v] <= n) ? (long long)n - f[v] + 1 : 0;
+        
+        for (int c = 0; c <= k - v; ++c) {
+            if (max_S[c] != -1) {
+                long long new_score = max_S[c] + buy_contribution;
+                if (new_score > dp[c + v][v]) {
+                    dp[c + v][v] = new_score;
+                }
+            }
         }
     }
 
-    // The answer is the maximum score possible with any valid cost <= k
+    // The answer is the maximum score achievable with any valid cost <= k
     long long ans = 0;
     for (int c = 0; c <= k; ++c) {
-        if (dp_score[c] > ans) {
-            ans = dp_score[c];
+        for (int p = 1; p <= k + 1; ++p) {
+            if (dp[c][p] > ans) {
+                ans = dp[c][p];
+            }
         }
     }
     cout << ans << "\n";
