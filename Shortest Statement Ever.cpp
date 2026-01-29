@@ -8,99 +8,97 @@ typedef long long ll;
 
 const ll INF = 4e18; 
 
-ll memo[32][3][3];
-struct Choice {
-    int p_val, q_val;
+ll dp[32][3][3];
+struct Move {
+    int p_bit, q_bit;
 };
-Choice choices[32][3][3];
+Move parent[32][3][3];
 
-ll x_in, y_in;
+ll X, Y;
 
-ll solve_dp(int bit, int sx, int sy) {
+ll solve(int bit, int cx, int cy) {
     if (bit < 0) return 0;
-    if (memo[bit][sx][sy] != -1) return memo[bit][sx][sy];
+    if (dp[bit][cx][cy] != -1) return dp[bit][cx][cy];
 
-    ll best_cost = INF;
-    Choice best_choice = {-1, -1};
+    ll res = INF;
+    Move best_move = {-1, -1};
 
-    int bx = (x_in >> bit) & 1;
-    int by = (y_in >> bit) & 1;
+    int bx = (X >> bit) & 1;
+    int by = (Y >> bit) & 1;
+    ll weight = (1LL << bit);
 
-    int pairs[3][2] = {{0,0}, {0,1}, {1,0}};
+    int pairs[3][2] = {{0, 0}, {0, 1}, {1, 0}};
 
-    for (auto& p : pairs) {
-        int u = p[0]; 
-        int v = p[1]; 
-
-        int nsx = sx;
-        if (sx == 1) { 
-            if (u < bx) nsx = 0;      
-            else if (u > bx) nsx = 2; 
+    for (auto& pair : pairs) {
+        int u = pair[0]; 
+        int v = pair[1]; 
+        int ncx = cx;
+        if (cx == 1) { 
+            if (u < bx) ncx = 0;      
+            else if (u > bx) ncx = 2; 
         }
 
-        int nsy = sy;
-        if (sy == 1) {
-            if (v < by) nsy = 0;
-            else if (v > by) nsy = 2;
+        int ncy = cy;
+        if (cy == 1) { 
+            if (v < by) ncy = 0;
+            else if (v > by) ncy = 2;
         }
 
         ll current_cost = 0;
-        ll weight = 1LL << bit;
 
-        if (nsx == 0) current_cost += (ll)(bx - u) * weight; 
-        else if (nsx == 2) current_cost += (ll)(u - bx) * weight; 
-        if (nsy == 0) current_cost += (ll)(by - v) * weight; 
-        else if (nsy == 2) current_cost += (ll)(v - by) * weight; 
-
-        ll remaining = solve_dp(bit - 1, nsx, nsy);
         
-        if (remaining != INF) {
-            ll total = current_cost + remaining;
-            if (total < best_cost) {
-                best_cost = total;
-                best_choice = {u, v};
+        if (ncx == 0) current_cost += (ll)(bx - u) * weight;
+        else if (ncx == 2) current_cost += (ll)(u - bx) * weight;
+
+        if (ncy == 0) current_cost += (ll)(by - v) * weight;
+        else if (ncy == 2) current_cost += (ll)(v - by) * weight;
+
+        ll sub_res = solve(bit - 1, ncx, ncy);
+        
+        if (sub_res != INF) {
+            if (current_cost + sub_res < res) {
+                res = current_cost + sub_res;
+                best_move = {u, v};
             }
         }
     }
 
-    choices[bit][sx][sy] = best_choice;
-    return memo[bit][sx][sy] = best_cost;
+    parent[bit][cx][cy] = best_move;
+    return dp[bit][cx][cy] = res;
 }
 
-void solve() {
-    if (!(cin >> x_in >> y_in)) return;
+void run_test_case() {
+    if (!(cin >> X >> Y)) return;
 
-    for (int i = 0; i < 32; ++i)
+    for (int i = 0; i <= 30; ++i)
         for (int j = 0; j < 3; ++j)
             for (int k = 0; k < 3; ++k)
-                memo[i][j][k] = -1;
+                dp[i][j][k] = -1;
 
-    solve_dp(30, 1, 1);
+    solve(29, 1, 1);
 
-    ll p_out = 0;
-    ll q_out = 0;
-    int curr_sx = 1;
-    int curr_sy = 1;
+    ll P = 0, Q = 0;
+    int cx = 1, cy = 1;
 
-    for (int bit = 30; bit >= 0; --bit) {
-        Choice c = choices[bit][curr_sx][curr_sy];
-        if (c.p_val) p_out |= (1LL << bit);
-        if (c.q_val) q_out |= (1LL << bit);
+    for (int bit = 29; bit >= 0; --bit) {
+        Move m = parent[bit][cx][cy];
+        if (m.p_bit) P |= (1LL << bit);
+        if (m.q_bit) Q |= (1LL << bit);
 
-        int bx = (x_in >> bit) & 1;
-        int by = (y_in >> bit) & 1;
+        int bx = (X >> bit) & 1;
+        int by = (Y >> bit) & 1;
 
-        if (curr_sx == 1) {
-            if (c.p_val < bx) curr_sx = 0;
-            else if (c.p_val > bx) curr_sx = 2;
+        if (cx == 1) {
+            if (m.p_bit < bx) cx = 0;
+            else if (m.p_bit > bx) cx = 2;
         }
-        if (curr_sy == 1) {
-            if (c.q_val < by) curr_sy = 0;
-            else if (c.q_val > by) curr_sy = 2;
+        if (cy == 1) {
+            if (m.q_bit < by) cy = 0;
+            else if (m.q_bit > by) cy = 2;
         }
     }
 
-    cout << p_out << " " << q_out << "\n";
+    cout << P << " " << Q << "\n";
 }
 
 int main() {
@@ -109,7 +107,7 @@ int main() {
     int t;
     if (cin >> t) {
         while (t--) {
-            solve();
+            run_test_case();
         }
     }
     return 0;
