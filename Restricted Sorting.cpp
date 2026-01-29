@@ -1,11 +1,34 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <set>
 
 using namespace std;
 
-const long long INF = 2e18; 
+bool check(long long k, int n, const vector<int>& a, const vector<int>& b) {
+    int min_val = b[0];      
+    int max_val = b[n - 1];  
+
+    if ((long long)max_val - min_val < k) {
+        for (int i = 0; i < n; ++i) {
+            if (a[i] != b[i]) return false;
+        }
+        return true;
+    }
+
+    long long lower_bound = max_val - k;
+    long long upper_bound = min_val + k;
+
+    for (int i = 0; i < n; ++i) {
+        if (a[i] > lower_bound && a[i] < upper_bound) {
+            if (a[i] != b[i]) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 void solve() {
     int n;
     if (!(cin >> n)) return;
@@ -15,33 +38,35 @@ void solve() {
         cin >> a[i];
     }
 
-    set<int> visited;
-    long long min_diff = INF;
-    bool inversion_found = false;
+    vector<int> b = a;
+    sort(b.begin(), b.end());
 
-    for (int x : a) {
-        auto it = visited.upper_bound(x);
-        
-        if (it != visited.end()) {
-            long long diff = (long long)(*it) - x;
-            if (diff < min_diff) {
-                min_diff = diff;
-            }
-            inversion_found = true;
-            
-            if (min_diff == 0) break;
+    long long low = 0, high = 1000000000LL; 
+    long long ans = 0;
+
+    bool already_sorted = true;
+    for(int i=0; i<n; ++i) {
+        if(a[i] != b[i]) {
+            already_sorted = false;
+            break;
         }
-        
-        
-        
-        
+    }
+    if (already_sorted) {
+        cout << -1 << "\n";
+        return;
     }
 
-    if (!inversion_found) {
-        cout << -1 << "\n";
-    } else {
-        cout << min_diff << "\n";
+    while (low <= high) {
+        long long mid = low + (high - low) / 2;
+        if (check(mid, n, a, b)) {
+            ans = mid;
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
     }
+
+    cout << ans << "\n";
 }
 
 int main() {
