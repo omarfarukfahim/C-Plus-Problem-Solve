@@ -6,7 +6,6 @@
 using namespace std;
 
 const long long INF = 2e18; 
-
 void solve() {
     int n;
     if (!(cin >> n)) return;
@@ -34,7 +33,6 @@ void solve() {
         }
         
         
-        visited.insert(x);
         
         
     }
