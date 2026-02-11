@@ -9,11 +9,6 @@ void solve() {
     ll p, q;
     if (!(cin >> p >> q)) return;
 
-    if (3 * p == 2 * q) {
-        cout << "Bob" << "\n";
-        return;
-    }
-
     ll K = min(p / 2, q / 3);
 
     if (K == 0) {
