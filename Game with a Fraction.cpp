@@ -3,23 +3,15 @@
 
 using namespace std;
 
-typedef long long ll;
-
 void solve() {
-    ll p, q;
+    long long p, q;
     if (!(cin >> p >> q)) return;
 
-    ll K = min(p / 2, q / 3);
+    long long diff = q - p;
+    
+    long long limit = min(p / 2, q / 3);
 
-    if (K == 0) {
-        cout << "Alice" << "\n";
-        return;
-    }
-
-    ll X = p - 2 * K;
-    ll Y = q - 3 * K;
-
-    if (X == Y) {
+    if (diff >= 1 && diff <= limit) {
         cout << "Bob" << "\n";
     } else {
         cout << "Alice" << "\n";
