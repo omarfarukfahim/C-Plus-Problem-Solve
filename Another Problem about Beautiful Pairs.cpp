@@ -8,45 +8,34 @@ void solve() {
     if (!(cin >> n)) return;
 
     vector<int> a(n + 1);
-    
-    
-    vector<vector<int>> positions(n + 1);
-
     for (int i = 1; i <= n; ++i) {
         cin >> a[i];
-        if (a[i] <= n) {
-            positions[a[i]].push_back(i);
-        }
     }
 
     long long count = 0;
-    
-    for (int v = 1; v * v < 2 * n; ++v) { 
-        if (v > n) break; 
+
+    for (int x = 1; x * x < n; ++x) {
         
-        for (int i : positions[v]) {
-            
-            for (int y = v; ; ++y) {
-                long long product = (long long)v * y;
-                if (product >= n) break; 
-                
-                int j = i + (int)product;
-                if (j > n) break;
-                
-                if (a[j] == y) {
-                    count++;
+        for (int j = 1; j <= n; ++j) {
+            if (a[j] >= x) {
+                long long dist = (long long)a[j] * x;
+                if (dist < j) {
+                    int i = j - (int)dist;
+                    if (a[i] == x) {
+                        count++;
+                    }
                 }
             }
+        }
 
-            for (int y = v + 1; ; ++y) {
-                long long product = (long long)v * y;
-                if (product >= n) break; 
-                
-                int left = i - (int)product;
-                if (left < 1) break;
-                
-                if (a[left] == y) {
-                    count++;
+        for (int i = 1; i <= n; ++i) {
+            if (a[i] > x) {
+                long long dist = (long long)a[i] * x;
+                if (i + dist <= n) {
+                    int j = i + (int)dist;
+                    if (a[j] == x) {
+                        count++;
+                    }
                 }
             }
         }
