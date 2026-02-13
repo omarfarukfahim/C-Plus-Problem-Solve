@@ -25,14 +25,10 @@ void solve() {
         levels.insert(level);
     }
 
-   
+    if (levels.size() == n) {
+        cout << "I become the guy." << "\n";
+    } else {
+        cout << "Oh, my keyboard!" << "\n";
+    }
 }
 
-int main() {
-    ios_base::sync_with_stdio(false);
-    cin.tie(NULL);
-
-    solve();
-
-    return 0;
-}
